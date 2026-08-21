@@ -53,6 +53,35 @@ Outputs:
 - `OSCAL_SSP_Rev5_YYYYMMDD.json` – ready for eMASS import validation
 - `migration_audit.log` – full decision trail
 
+## Unit Tests (100% Accuracy Target)
+
+A comprehensive unittest suite lives in `tests/test_oscal_migration.py` (17 tests).
+
+```bash
+python -m unittest tests.test_oscal_migration -v
+```
+
+Coverage includes:
+
+| Test Area                        | What is verified                                      |
+|----------------------------------|-------------------------------------------------------|
+| UUID determinism                 | Same control always yields identical UUID v5          |
+| UUID stability across runs       | Full migration is idempotent                          |
+| One-to-one                       | Narrative + SCLM props preserved                      |
+| One-to-many split                | Narrative duplicated; distinct SCLM per child         |
+| Many-to-one merge                | All source narratives aggregated without loss         |
+| Result cardinality               | Exact expected control count after transformations    |
+| SCLM fallback                    | Missing modules → NOT-CONFIGURED / planned            |
+| Withdrawn strategy               | Control omitted from output                           |
+| Unmapped control                 | Falls back to one-to-one                              |
+| Empty / malformed source         | Graceful empty result                                 |
+| Duplicate prevention             | Same control-id processed only once                   |
+| eMASS schema integrity           | Lowercase props, control-id format, required props    |
+| Partial merge sources            | Missing source narrative does not crash               |
+| Unknown strategy                 | Coerced safely to one-to-one                          |
+
+All 17 tests currently pass.
+
 ## Conversion Matrix Patterns
 
 | Rev 4 Pattern       | Rev 5 Structural Shift          | Data Matrix Action                                      | SCLM Integration Strategy                          |
@@ -80,6 +109,8 @@ rev4upgrade/
 │   └── sclm_library.json         # SCLM telemetry bindings
 ├── samples/
 │   └── source_rev4_ssp.json      # Example eMASS Rev 4 export
+├── tests/
+│   └── test_oscal_migration.py  # 17-test accuracy suite
 ├── migration_audit.log           # Generated on run
 └── README.md
 ```
