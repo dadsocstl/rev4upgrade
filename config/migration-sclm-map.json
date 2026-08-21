@@ -1,0 +1,67 @@
+{
+  "_meta": {
+    "description": "DAAG-aligned Rev 4 to Rev 5 conversion matrix with SCLM placeholders. SCLM values are intentionally set to not-configured / review-required until ISSM/ISSO/SCA populate verified workspace evidence. Do not embed unverified repository URLs.",
+    "version": "1.0.0",
+    "scope": "narrative-migration-only",
+    "ato_claim": false
+  },
+  "ac-2": {
+    "strategy": "split",
+    "targets": ["ac-2", "ac-2(1)", "ac-2(2)"],
+    "processing_note": "Account management split into base control and individual automated enforcement parameters.",
+    "sclm": {
+      "ac-2": {
+        "module_id": "NOT-CONFIGURED",
+        "execution_uri": "N/A",
+        "status": "review-required"
+      },
+      "ac-2(1)": {
+        "module_id": "NOT-CONFIGURED",
+        "execution_uri": "N/A",
+        "status": "review-required"
+      },
+      "ac-2(2)": {
+        "module_id": "NOT-CONFIGURED",
+        "execution_uri": "N/A",
+        "status": "review-required"
+      }
+    }
+  },
+  "cm-2": {
+    "strategy": "one-to-one",
+    "targets": ["cm-2"],
+    "processing_note": "Direct structural line mapping for baseline configurations.",
+    "sclm": {
+      "cm-2": {
+        "module_id": "NOT-CONFIGURED",
+        "execution_uri": "N/A",
+        "status": "review-required"
+      }
+    }
+  },
+  "ia-2": {
+    "strategy": "merge",
+    "targets": ["ia-2"],
+    "sources_to_merge": ["ia-2", "ia-2(1)"],
+    "processing_note": "Consolidating sub-authentication controls into a unified identity baseline.",
+    "sclm": {
+      "ia-2": {
+        "module_id": "NOT-CONFIGURED",
+        "execution_uri": "N/A",
+        "status": "review-required"
+      }
+    }
+  },
+  "cm-6": {
+    "strategy": "one-to-one",
+    "targets": ["cm-6"],
+    "processing_note": "Configuration settings remain structurally equivalent.",
+    "sclm": {
+      "cm-6": {
+        "module_id": "NOT-CONFIGURED",
+        "execution_uri": "N/A",
+        "status": "review-required"
+      }
+    }
+  }
+}
