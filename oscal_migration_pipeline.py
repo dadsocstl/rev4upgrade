@@ -237,7 +237,6 @@ class OscalMigrationPipeline:
 
                 else:
                     logger.warning(f"Unknown strategy '{strategy}' for {r4_id}; treating as one-to-one")
-                    # Fall through to one-to-one behavior already handled above
 
             except Exception as e:
                 logger.error(f"Failed to process control {r4_id}: {e}")
