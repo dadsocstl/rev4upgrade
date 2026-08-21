@@ -1,0 +1,39 @@
+{
+  "system-security-plan": {
+    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "metadata": {
+      "title": "Sample Rev 4 SSP Export (eMASS)",
+      "last-modified": "2024-11-15T14:30:00Z",
+      "oscal-version": "1.0.0"
+    },
+    "control-implementation": {
+      "implemented-requirements": [
+        {
+          "uuid": "11111111-1111-1111-1111-111111111111",
+          "control-id": "ac-2",
+          "description": "Active Directory domain controllers enforce account creation and approval processes. Accounts are reviewed quarterly by the system owner."
+        },
+        {
+          "uuid": "22222222-2222-2222-2222-222222222222",
+          "control-id": "cm-2",
+          "description": "System configuration baselines are captured in Git repositories and managed via infrastructure-as-code. Gold images are hardened to the current DISA STIG."
+        },
+        {
+          "uuid": "33333333-3333-3333-3333-333333333333",
+          "control-id": "ia-2",
+          "description": "System access requires active CAC card authentication for all interactive logons."
+        },
+        {
+          "uuid": "44444444-4444-4444-4444-444444444444",
+          "control-id": "ia-2(1)",
+          "description": "Multi-factor tokens are verified locally by the identity provider system layer before session establishment."
+        },
+        {
+          "uuid": "55555555-5555-5555-5555-555555555555",
+          "control-id": "cm-6",
+          "description": "Configuration settings are enforced through group policy and configuration management tools. Deviations require documented risk acceptance."
+        }
+      ]
+    }
+  }
+}

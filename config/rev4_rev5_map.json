@@ -1,0 +1,23 @@
+{
+  "ac-2": {
+    "strategy": "split",
+    "targets": ["ac-2", "ac-2(1)", "ac-2(2)"],
+    "processing_note": "Account management split into base control and individual automated enforcement parameters."
+  },
+  "cm-2": {
+    "strategy": "one-to-one",
+    "targets": ["cm-2"],
+    "processing_note": "Direct structural line mapping for baseline configurations."
+  },
+  "ia-2": {
+    "strategy": "merge",
+    "targets": ["ia-2"],
+    "sources_to_merge": ["ia-2", "ia-2(1)"],
+    "processing_note": "Consolidating sub-authentication controls into a unified identity baseline."
+  },
+  "cm-6": {
+    "strategy": "one-to-one",
+    "targets": ["cm-6"],
+    "processing_note": "Configuration settings remain structurally equivalent."
+  }
+}

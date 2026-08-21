@@ -1,0 +1,32 @@
+{
+  "ac-2": {
+    "module_id": "SCLM-IDENTITY-AD-01",
+    "execution_uri": "https://sclm.internal/scripts/ad_account_mgmt.ps1",
+    "status": "implemented"
+  },
+  "ac-2(1)": {
+    "module_id": "SCLM-IDENTITY-AD-02",
+    "execution_uri": "https://sclm.internal/scripts/ad_auto_lock.ps1",
+    "status": "implemented"
+  },
+  "ac-2(2)": {
+    "module_id": "SCLM-MANUAL-REVIEW",
+    "execution_uri": "N/A",
+    "status": "partially-implemented"
+  },
+  "cm-2": {
+    "module_id": "SCLM-GOLD-IMAGE-RHEL9",
+    "execution_uri": "https://sclm.internal/playbooks/rhel9_stig.yml",
+    "status": "implemented"
+  },
+  "ia-2": {
+    "module_id": "SCLM-MFA-ENFORCER",
+    "execution_uri": "https://sclm.internal/policies/mfa_enforcement.json",
+    "status": "implemented"
+  },
+  "cm-6": {
+    "module_id": "SCLM-CONFIG-SETTINGS",
+    "execution_uri": "https://sclm.internal/scripts/cm6_check.sh",
+    "status": "implemented"
+  }
+}

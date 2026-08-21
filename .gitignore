@@ -1,0 +1,29 @@
+# Runtime outputs
+OSCAL_SSP_Rev5_*.json
+migration_audit.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Secrets (never commit)
+*.pem
+*.key
+.env
+secrets/
