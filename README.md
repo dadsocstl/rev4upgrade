@@ -5,62 +5,74 @@
 
 This repository provides a production-grade, auditable Python pipeline that converts an eMASS-exported OSCAL Rev 4 System Security Plan (SSP) into a validated OSCAL Rev 5 SSP JSON payload. It injects custom Secure Configuration LockDown Module (SCLM) tracking properties while preserving full auditability and deterministic UUIDs for safe iterative imports into eMASS.
 
-## Why This Exists
+## DAAG Transition Strategy
 
-NIST SP 800-53 Rev 5 introduced structural changes (control splits, consolidations, withdrawals). Manual migration of implementation narratives is error-prone and non-reproducible. This pipeline enforces a controlled conversion matrix so every auditor runs against the same approved mapping baseline.
+Full strategy, architecture, narrative contract, and validation gates live under:
 
-## Role & Objective (Agent Instruction Summary)
+**[docs/daag-transition/](docs/daag-transition/)**
 
-You are a **NIST RMF SP 800-53 Cybersecurity Auditor** specializing in OSCAL-based migrations. Your goal is to transform an eMASS-exported OSCAL Rev 4 SSP into a validated OSCAL Rev 5 SSP JSON payload while injecting organization-specific SCLM tracking properties.
+Key principles:
+
+- Every Rev 5 narrative is traceable to its Rev 4 source (or an explicit new-control decision).
+- SCLM values remain `NOT-CONFIGURED` / `review-required` until ISSM/ISSO/SCA populate verified evidence.
+- No unverified repository URLs are embedded.
+- Output is a **draft** until the synchronization rule and review gates complete.
+- **Never invent classified content. Never claim ATO.**
+
+See also: [Architecture](docs/daag-transition/architecture.md) · [Narrative Engine](docs/daag-transition/narrative-engine.md) · [Validation Checklist](docs/daag-transition/validation-checklist.md)
+
+## Role & Objective
+
+You are a **NIST RMF SP 800-53 Cybersecurity Auditor** specializing in OSCAL-based migrations. Your goal is to transform an eMASS-exported OSCAL Rev 4 SSP into a validated OSCAL Rev 5 SSP JSON payload while injecting organization-specific SCLM tracking properties under the DAAG transition strategy.
 
 ### Execution Pipeline Requirements
 
 1. **Environment Setup** – Python 3 + `requests`
-2. **Input Ingestion** – `source_rev4_ssp.json` + authoritative remote `rev4_rev5_map.json` + `sclm_library.json`
+2. **Input Ingestion** – `source_rev4_ssp.json` + conversion matrix + SCLM map
 3. **Transform Engine Rules**
    - `one-to-one`: Direct narrative copy + SCLM properties
-   - `split`: Duplicate base narrative across all child controls; append migration markers
-   - `merge`: Concatenate source narratives with `---` separators
-4. **Reproducibility (Idempotency)** – UUID v5 only (never v4) inside `implemented-requirements`
+   - `split`: Duplicate base narrative across all child controls; append GFM provenance markers
+   - `merge`: Concatenate source narratives with clear separators
+   - `withdrawn`: Omit from output; record in audit log only
+4. **Reproducibility (Idempotency)** – UUID v5 only inside `implemented-requirements`
 5. **Error Management** – Dual-channel logging + execution statistics
 
 ### Deliverables
 
-- Structural OSCAL Rev 5 JSON aligned with NIST schema
-- Transparent `migration_audit.log` with processed / split / merged / error counts
+- Structural OSCAL Rev 5 JSON aligned with NIST schema (draft)
+- Transparent `migration_audit.log` with processed / split / merged / withdrawn / error counts
 
 ## Quick Start
 
 ```bash
-# 1. Clone
 git clone https://github.com/dadsocstl/rev4upgrade.git
 cd rev4upgrade
-
-# 2. Install dependencies
 pip install -r requirements.txt
-
-# 3. Place your eMASS Rev 4 export as source_rev4_ssp.json
-#    (or use the included sample)
-
-# 4. (Optional) Point to your own remote mapping matrix
-#    Edit MAPPING_URL and SCLM_URL in the script, or keep the local fallbacks
-
-# 5. Run
 python oscal_migration_pipeline.py
 ```
 
 Outputs:
-- `OSCAL_SSP_Rev5_YYYYMMDD.json` – ready for eMASS import validation
+- `OSCAL_SSP_Rev5_YYYYMMDD.json` – draft ready for schema validation and review gates
 - `migration_audit.log` – full decision trail
+
+## Unit Tests (100% Accuracy Target)
+
+```bash
+python -m unittest tests.test_oscal_migration -v
+```
+
+17 tests covering UUID determinism, one-to-one / split / merge / withdrawn, SCLM fallbacks, eMASS schema integrity, and edge cases. All currently pass.
 
 ## Conversion Matrix Patterns
 
 | Rev 4 Pattern       | Rev 5 Structural Shift          | Data Matrix Action                                      | SCLM Integration Strategy                          |
 |---------------------|---------------------------------|---------------------------------------------------------|----------------------------------------------------|
-| 1-to-1 Match        | Direct carry-over (e.g. cm-2)   | Copy narrative string                                   | Map to one SCLM module ID                          |
-| 1-to-Many Split     | Control divided into subsets    | Duplicate base narrative; append child-context blocks   | Bind distinct automated checks to each child       |
-| Many-to-1 Merge     | Consolidations                  | Concat narratives with `---` separators                 | Reference omnibus orchestration playbook           |
-| Withdrawn / Omitted | Control removed or integrated   | Move narrative to system remark / audit trail           | Flag associated SCLM script as deprecated          |
+| 1-to-1 Match        | Direct carry-over (e.g. cm-2)   | Copy narrative string                                   | Placeholder until verified                         |
+| 1-to-Many Split     | Control divided into subsets    | Duplicate base narrative; append provenance markers     | Distinct placeholders per child                    |
+| Many-to-1 Merge     | Consolidations                  | Concat narratives with separators                       | Single placeholder on target                       |
+| Withdrawn / Omitted | Control removed or integrated   | Record in audit log only                                | Flag associated script as deprecated               |
+
+Authoritative map: [`config/migration-sclm-map.json`](config/migration-sclm-map.json) (SCLM set to `NOT-CONFIGURED` / `review-required`).
 
 ## Schema Integrity Rules (eMASS)
 
@@ -73,24 +85,23 @@ Outputs:
 
 ```
 rev4upgrade/
-├── oscal_migration_pipeline.py   # Main engine
+├── oscal_migration_pipeline.py
 ├── requirements.txt
 ├── config/
-│   ├── rev4_rev5_map.json        # Conversion matrix (can be remote)
-│   └── sclm_library.json         # SCLM telemetry bindings
+│   ├── migration-sclm-map.json   # DAAG-aligned matrix + safe SCLM placeholders
+│   ├── rev4_rev5_map.json
+│   └── sclm_library.json
+├── docs/daag-transition/       # Strategy, architecture, narrative engine, checklist
 ├── samples/
-│   └── source_rev4_ssp.json      # Example eMASS Rev 4 export
-├── migration_audit.log           # Generated on run
+│   └── source_rev4_ssp.json
+├── tests/
+│   └── test_oscal_migration.py
 └── README.md
 ```
 
-## Remote Configuration (Recommended for Enterprise)
+## Scope Boundary
 
-Host `rev4_rev5_map.json` and `sclm_library.json` in a private Git repository (or internal S3/Artifactory) and point the script at the raw URLs. This guarantees every auditor uses the identical approved baseline.
-
-## License
-
-This project is provided for official use by cybersecurity auditors performing NIST RMF SP 800-53 migrations. No warranty expressed or implied. Always validate output against the current NIST OSCAL schema and your organizational eMASS import rules before production use.
+This repository covers **narrative migration and its supporting traceability**. It does not replace the authoritative NIST catalog, DCSA transition instructions, eMASS import validation, or an Authorizing Official decision. A generated narrative remains a draft until the ISSM/ISSO, system owner, assessor, and AO-authorized process approve it.
 
 ---
-*Aligned with NIST SP 800-53 Rev 5, OSCAL 1.1.x, and eMASS import expectations. Never claims Authorization to Operate.*
+*Aligned with NIST SP 800-53 Rev 5, OSCAL 1.1.x, DAAG transition strategy, and eMASS import expectations. Never claims Authorization to Operate.*
