@@ -32,6 +32,30 @@
           "uuid": "55555555-5555-5555-5555-555555555555",
           "control-id": "cm-6",
           "description": "Configuration settings are enforced through group policy and configuration management tools. Deviations require documented risk acceptance."
+        },
+        {
+          "uuid": "66666666-6666-6666-6666-666666666666",
+          "control-id": "at-2",
+          "description": "All personnel with system access complete annual security awareness training via the LMS platform. Training records are maintained in the HR system and reviewed by the ISSO annually.",
+          "approval-state": "approved",
+          "signed-official": "J. Smith, ISSO",
+          "approval-date": "2025-03-15",
+          "method": "document-review",
+          "frequency": "annually",
+          "owner": "Security Awareness Program Manager",
+          "artifact": "artifacts/at-2/AT-2_Training_Completion_Report_2025.pdf"
+        },
+        {
+          "uuid": "77777777-7777-7777-7777-777777777777",
+          "control-id": "ca-7",
+          "description": "Continuous monitoring is conducted via automated scanning tools and quarterly manual reviews. Findings are tracked in the POA&M and reported to the AO monthly.",
+          "approval-state": "approved",
+          "signed-official": "M. Johnson, AO",
+          "approval-date": "2025-04-01",
+          "method": "automated-review",
+          "frequency": "monthly",
+          "owner": "Continuous Monitoring Lead",
+          "artifact": "artifacts/ca-7/CA-7_ConMon_Strategy_v2.docx"
         }
       ]
     }
