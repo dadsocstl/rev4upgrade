@@ -117,7 +117,7 @@ class OscalMigrationPipeline:
         """Stable UUID v5 based on control ID – prevents duplicate eMASS entries."""
         return str(uuid.uuid5(self.namespace, f"emass-rev5-{control_id}-{context}"))
 
-    def _build_oscal_properties(self, target_id: str, r4_source_id: str, strategy: str) -> list:
+    def _build_oscal_properties(self, target_id: str, r4_source_id: str, strategy: str, r4_req: dict = None) -> list:
         """Assemble OSCAL props array with SCLM telemetry and migration metadata."""
         try:
             sclm_info = self.sclm.get(target_id, {
@@ -125,13 +125,21 @@ class OscalMigrationPipeline:
                 "execution_uri": "N/A",
                 "status": "planned",
             })
-            return [
+            props = [
                 {"name": "migration-strategy", "value": strategy},
                 {"name": "legacy-rev4-control", "value": r4_source_id},
                 {"name": "sclm-module-id", "value": sclm_info.get("module_id", "NOT-CONFIGURED")},
-                {"name": "sclm-automation-payload", "value": sclm_info.get("execution_uri", "N/A")},
+                {"name": "sclm-automation-payload", "value": sclm_info.get("execution_uri", sclm_info.get("uri", "N/A"))},
                 {"name": "implementation-status", "value": sclm_info.get("status", "planned")},
             ]
+            # Inject approval/pilot fields from SCLM library or source requirement
+            approval_fields = ["approval-state", "signed-official", "approval-date",
+                               "method", "frequency", "owner", "artifact"]
+            for field in approval_fields:
+                value = sclm_info.get(field) or (r4_req.get(field) if r4_req else None)
+                if value:
+                    props.append({"name": field, "value": value})
+            return props
         except Exception as e:
             logger.error(f"Property build failure for {target_id}: {e}")
             self.stats["errors"] += 1
@@ -184,7 +192,7 @@ class OscalMigrationPipeline:
                         r5_req = {
                             "uuid": self._generate_deterministic_uuid(target_id),
                             "control-id": target_id,
-                            "props": self._build_oscal_properties(target_id, r4_id, strategy),
+                            "props": self._build_oscal_properties(target_id, r4_id, strategy, req),
                             "description": (
                                 f"| Migrated from R4 {r4_id.upper()} via {strategy.upper()} strategy | "
                                 f"{base_narrative}"
@@ -219,7 +227,7 @@ class OscalMigrationPipeline:
                             "uuid": self._generate_deterministic_uuid(target_id),
                             "control-id": target_id,
                             "props": self._build_oscal_properties(
-                                target_id, ", ".join(sources), strategy
+                                target_id, ", ".join(sources), strategy, req
                             ),
                             "description": f"| Merged Data Stream |\n\n{unified_narrative}",
                         }

@@ -31,6 +31,28 @@ def generate_deterministic_uuid(control_id: str, context: str = "ssp-req") -> st
     return str(uuid.uuid5(NAMESPACE, f"emass-rev5-{control_id}-{context}"))
 
 
+APPROVAL_FIELDS = [
+    "approval-state", "signed-official", "approval-date",
+    "method", "frequency", "owner", "artifact",
+]
+
+
+def _build_props(strategy: str, legacy_id: str, sclm_info: dict, r4_req: dict = None) -> list:
+    """Build OSCAL props list including optional approval/pilot fields."""
+    props = [
+        {"name": "migration-strategy", "value": strategy},
+        {"name": "legacy-rev4-control", "value": legacy_id},
+        {"name": "sclm-module-id", "value": sclm_info.get("module_id", "NOT-CONFIGURED")},
+        {"name": "sclm-automation-payload", "value": sclm_info.get("uri", sclm_info.get("execution_uri", "N/A"))},
+        {"name": "implementation-status", "value": sclm_info.get("status", "planned")},
+    ]
+    for field in APPROVAL_FIELDS:
+        value = sclm_info.get(field) or (r4_req.get(field) if r4_req else None)
+        if value:
+            props.append({"name": field, "value": value})
+    return props
+
+
 def execute_mll_migration(
     ssp_source: dict[str, Any],
     matrix: dict[str, Any],
@@ -82,13 +104,7 @@ def execute_mll_migration(
                     {
                         "uuid": generate_deterministic_uuid(target_id),
                         "control-id": target_id,
-                        "props": [
-                            {"name": "migration-strategy", "value": strategy},
-                            {"name": "legacy-rev4-control", "value": r4_id},
-                            {"name": "sclm-module-id", "value": sclm_info.get("module_id", "NOT-CONFIGURED")},
-                            {"name": "sclm-automation-payload", "value": sclm_info.get("uri", "N/A")},
-                            {"name": "implementation-status", "value": sclm_info.get("status", "planned")},
-                        ],
+                        "props": _build_props(strategy, r4_id, sclm_info, req),
                         "description": f"| Migrated via {strategy.upper()} | {base_text}",
                     }
                 )
@@ -115,13 +131,7 @@ def execute_mll_migration(
                     {
                         "uuid": generate_deterministic_uuid(target_id),
                         "control-id": target_id,
-                        "props": [
-                            {"name": "migration-strategy", "value": strategy},
-                            {"name": "legacy-rev4-control", "value": ", ".join(sources)},
-                            {"name": "sclm-module-id", "value": sclm_info.get("module_id", "NOT-CONFIGURED")},
-                            {"name": "sclm-automation-payload", "value": sclm_info.get("uri", "N/A")},
-                            {"name": "implementation-status", "value": sclm_info.get("status", "planned")},
-                        ],
+                        "props": _build_props("merge", ", ".join(sources), sclm_info, req),
                         "description": unified_narrative,
                     }
                 )
@@ -147,13 +157,7 @@ def execute_mll_migration(
                     {
                         "uuid": generate_deterministic_uuid(target_id),
                         "control-id": target_id,
-                        "props": [
-                            {"name": "migration-strategy", "value": "one-to-one"},
-                            {"name": "legacy-rev4-control", "value": r4_id},
-                            {"name": "sclm-module-id", "value": sclm_info.get("module_id", "NOT-CONFIGURED")},
-                            {"name": "sclm-automation-payload", "value": sclm_info.get("uri", "N/A")},
-                            {"name": "implementation-status", "value": sclm_info.get("status", "planned")},
-                        ],
+                        "props": _build_props("one-to-one", r4_id, sclm_info, req),
                         "description": f"| Migrated via ONE-TO-ONE | {base_text}",
                     }
                 )
@@ -536,6 +540,169 @@ class TestOscalMllMigrationPipeline(unittest.TestCase):
         self.assertIsNotNone(cm2)
         props = {p["name"]: p["value"] for p in cm2["props"]}
         self.assertEqual(props["migration-strategy"], "one-to-one")
+
+    # ------------------------------------------------------------------
+    # 2.14 AT/CA Pilot Rows – signed approval fields
+    # ------------------------------------------------------------------
+    def test_at_ca_pilot_rows_approval_fields_present(self):
+        """AT-2 and CA-7 pilot rows carry all required signed-approval props."""
+        at_ca_ssp = {
+            "system-security-plan": {
+                "control-implementation": {
+                    "implemented-requirements": [
+                        {
+                            "control-id": "at-2",
+                            "description": "Annual security awareness training via LMS.",
+                            "approval-state": "approved",
+                            "signed-official": "J. Smith, ISSO",
+                            "approval-date": "2025-03-15",
+                            "method": "document-review",
+                            "frequency": "annually",
+                            "owner": "Security Awareness Program Manager",
+                            "artifact": "artifacts/at-2/AT-2_Training_Completion_Report_2025.pdf",
+                        },
+                        {
+                            "control-id": "ca-7",
+                            "description": "Continuous monitoring via automated scanning.",
+                            "approval-state": "approved",
+                            "signed-official": "M. Johnson, AO",
+                            "approval-date": "2025-04-01",
+                            "method": "automated-review",
+                            "frequency": "monthly",
+                            "owner": "Continuous Monitoring Lead",
+                            "artifact": "artifacts/ca-7/CA-7_ConMon_Strategy_v2.docx",
+                        },
+                    ]
+                }
+            }
+        }
+        at_ca_matrix = {
+            "at-2": {"strategy": "one-to-one", "targets": ["at-2"]},
+            "ca-7": {"strategy": "one-to-one", "targets": ["ca-7"]},
+        }
+        at_ca_sclm = {
+            "at-2": {
+                "module_id": "SCLM-AWARENESS-TRAINING",
+                "uri": "https://sclm.internal/policies/at2_training_records.json",
+                "status": "implemented",
+                "approval-state": "approved",
+                "signed-official": "J. Smith, ISSO",
+                "approval-date": "2025-03-15",
+                "method": "document-review",
+                "frequency": "annually",
+                "owner": "Security Awareness Program Manager",
+                "artifact": "artifacts/at-2/AT-2_Training_Completion_Report_2025.pdf",
+            },
+            "ca-7": {
+                "module_id": "SCLM-CONTINUOUS-MONITORING",
+                "uri": "https://sclm.internal/scripts/ca7_conmon.sh",
+                "status": "implemented",
+                "approval-state": "approved",
+                "signed-official": "M. Johnson, AO",
+                "approval-date": "2025-04-01",
+                "method": "automated-review",
+                "frequency": "monthly",
+                "owner": "Continuous Monitoring Lead",
+                "artifact": "artifacts/ca-7/CA-7_ConMon_Strategy_v2.docx",
+            },
+        }
+        results = execute_mll_migration(at_ca_ssp, at_ca_matrix, at_ca_sclm)
+        self.assertEqual(len(results), 2)
+
+        for control_id in ("at-2", "ca-7"):
+            row = next((r for r in results if r["control-id"] == control_id), None)
+            self.assertIsNotNone(row, f"{control_id} row missing from output")
+            props = {p["name"]: p["value"] for p in row["props"]}
+            self.assertEqual(props["approval-state"], "approved",
+                             f"{control_id}: approval-state must be 'approved'")
+            self.assertIn("signed-official", props,
+                          f"{control_id}: signed-official prop missing")
+            self.assertRegex(props.get("approval-date", ""), r"^\d{4}-\d{2}-\d{2}$",
+                             f"{control_id}: approval-date must be YYYY-MM-DD")
+            self.assertIn("method", props, f"{control_id}: method prop missing")
+            self.assertIn("frequency", props, f"{control_id}: frequency prop missing")
+            self.assertIn("owner", props, f"{control_id}: owner prop missing")
+            self.assertIn("artifact", props, f"{control_id}: artifact prop missing")
+            # Artifact must be a non-empty named path
+            self.assertTrue(props["artifact"].strip(),
+                            f"{control_id}: artifact value must not be empty")
+
+    def test_at2_pilot_row_specific_values(self):
+        """AT-2 pilot row contains the correct signed official, date, and artifact."""
+        at_ssp = {
+            "system-security-plan": {
+                "control-implementation": {
+                    "implemented-requirements": [
+                        {
+                            "control-id": "at-2",
+                            "description": "Annual security awareness training via LMS.",
+                        }
+                    ]
+                }
+            }
+        }
+        at_matrix = {"at-2": {"strategy": "one-to-one", "targets": ["at-2"]}}
+        at_sclm = {
+            "at-2": {
+                "module_id": "SCLM-AWARENESS-TRAINING",
+                "uri": "https://sclm.internal/policies/at2_training_records.json",
+                "status": "implemented",
+                "approval-state": "approved",
+                "signed-official": "J. Smith, ISSO",
+                "approval-date": "2025-03-15",
+                "method": "document-review",
+                "frequency": "annually",
+                "owner": "Security Awareness Program Manager",
+                "artifact": "artifacts/at-2/AT-2_Training_Completion_Report_2025.pdf",
+            }
+        }
+        results = execute_mll_migration(at_ssp, at_matrix, at_sclm)
+        at2 = next((r for r in results if r["control-id"] == "at-2"), None)
+        self.assertIsNotNone(at2)
+        props = {p["name"]: p["value"] for p in at2["props"]}
+        self.assertEqual(props["signed-official"], "J. Smith, ISSO")
+        self.assertEqual(props["approval-date"], "2025-03-15")
+        self.assertEqual(props["frequency"], "annually")
+        self.assertEqual(props["artifact"],
+                         "artifacts/at-2/AT-2_Training_Completion_Report_2025.pdf")
+
+    def test_ca7_pilot_row_specific_values(self):
+        """CA-7 pilot row contains the correct signed official, date, and artifact."""
+        ca_ssp = {
+            "system-security-plan": {
+                "control-implementation": {
+                    "implemented-requirements": [
+                        {
+                            "control-id": "ca-7",
+                            "description": "Continuous monitoring via automated scanning.",
+                        }
+                    ]
+                }
+            }
+        }
+        ca_matrix = {"ca-7": {"strategy": "one-to-one", "targets": ["ca-7"]}}
+        ca_sclm = {
+            "ca-7": {
+                "module_id": "SCLM-CONTINUOUS-MONITORING",
+                "uri": "https://sclm.internal/scripts/ca7_conmon.sh",
+                "status": "implemented",
+                "approval-state": "approved",
+                "signed-official": "M. Johnson, AO",
+                "approval-date": "2025-04-01",
+                "method": "automated-review",
+                "frequency": "monthly",
+                "owner": "Continuous Monitoring Lead",
+                "artifact": "artifacts/ca-7/CA-7_ConMon_Strategy_v2.docx",
+            }
+        }
+        results = execute_mll_migration(ca_ssp, ca_matrix, ca_sclm)
+        ca7 = next((r for r in results if r["control-id"] == "ca-7"), None)
+        self.assertIsNotNone(ca7)
+        props = {p["name"]: p["value"] for p in ca7["props"]}
+        self.assertEqual(props["signed-official"], "M. Johnson, AO")
+        self.assertEqual(props["approval-date"], "2025-04-01")
+        self.assertEqual(props["frequency"], "monthly")
+        self.assertEqual(props["artifact"], "artifacts/ca-7/CA-7_ConMon_Strategy_v2.docx")
 
 
 # =============================================================================

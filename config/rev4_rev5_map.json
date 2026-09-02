@@ -19,5 +19,15 @@
     "strategy": "one-to-one",
     "targets": ["cm-6"],
     "processing_note": "Configuration settings remain structurally equivalent."
+  },
+  "at-2": {
+    "strategy": "one-to-one",
+    "targets": ["at-2"],
+    "processing_note": "Security awareness training maps directly to Rev 5 AT-2."
+  },
+  "ca-7": {
+    "strategy": "one-to-one",
+    "targets": ["ca-7"],
+    "processing_note": "Continuous monitoring maps directly to Rev 5 CA-7."
   }
 }

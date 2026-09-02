@@ -28,5 +28,29 @@
     "module_id": "SCLM-CONFIG-SETTINGS",
     "execution_uri": "https://sclm.internal/scripts/cm6_check.sh",
     "status": "implemented"
+  },
+  "at-2": {
+    "module_id": "SCLM-AWARENESS-TRAINING",
+    "execution_uri": "https://sclm.internal/policies/at2_training_records.json",
+    "status": "implemented",
+    "approval-state": "approved",
+    "signed-official": "J. Smith, ISSO",
+    "approval-date": "2025-03-15",
+    "method": "document-review",
+    "frequency": "annually",
+    "owner": "Security Awareness Program Manager",
+    "artifact": "artifacts/at-2/AT-2_Training_Completion_Report_2025.pdf"
+  },
+  "ca-7": {
+    "module_id": "SCLM-CONTINUOUS-MONITORING",
+    "execution_uri": "https://sclm.internal/scripts/ca7_conmon.sh",
+    "status": "implemented",
+    "approval-state": "approved",
+    "signed-official": "M. Johnson, AO",
+    "approval-date": "2025-04-01",
+    "method": "automated-review",
+    "frequency": "monthly",
+    "owner": "Continuous Monitoring Lead",
+    "artifact": "artifacts/ca-7/CA-7_ConMon_Strategy_v2.docx"
   }
 }
